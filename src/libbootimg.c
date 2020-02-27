@@ -78,8 +78,8 @@ static void fill_id_hashes(struct bootimg *b)
     // hash kernel, ramdisk and second _addr and _size together
     b->hdr.id[i++] = calc_fnv_hash(&b->hdr.kernel_size, sizeof(uint32_t)*6);
 
-    // hash tags_addr, page_size, dt_size and unused together
-    b->hdr.id[i++] = calc_fnv_hash(&b->hdr.tags_addr, sizeof(uint32_t)*4);
+    // hash tags_addr, page_size, header_version and os_version together
+    b->hdr.id[i++] = calc_fnv_hash(&b->hdr.tags_addr, sizeof(uint32_t)*6);
 
     // cmdline is directly after name, so hash them together
     b->hdr.id[i++] = calc_fnv_hash(b->hdr.name, BOOT_NAME_SIZE + strlen((char*)b->hdr.cmdline));
@@ -182,14 +182,16 @@ void libbootimg_destroy(struct bootimg *b)
     }
 }
 
-int libbootimg_load_header(struct boot_img_hdr *hdr, const char *path)
+int libbootimg_load_header(struct boot_img_hdr_v2 *hdr, const char *path)
 {
     struct boot_img_hdr_elf hdr_elf;
     return libbootimg_load_headers(hdr, &hdr_elf, NULL, path);
 }
 
-int libbootimg_load_headers(struct boot_img_hdr *hdr,
-        struct boot_img_hdr_elf *hdr_elf, uint8_t *is_elf, const char *path)
+int libbootimg_load_headers(struct boot_img_hdr_v2 *hdr,
+                            struct boot_img_hdr_elf *hdr_elf,
+                            uint8_t *is_elf,
+                            const char *path)
 {
     int res = 0;
     FILE *f;
@@ -208,7 +210,7 @@ int libbootimg_load_headers(struct boot_img_hdr *hdr,
     for (i = 0; i < sizeof(known_magic_pos)/sizeof(known_magic_pos[0]); ++i)
     {
         fseek(f, known_magic_pos[i], SEEK_SET);
-        if (fread(hdr, sizeof(struct boot_img_hdr), 1, f) == 1)
+        if (fread(hdr, sizeof(struct boot_img_hdr_v2), 1, f) == 1)
         {
             if (memcmp(hdr->magic, BOOT_MAGIC, BOOT_MAGIC_SIZE) == 0)
             {
@@ -442,7 +444,7 @@ int libbootimg_write_img_fileptr(struct bootimg *b, FILE *f)
 
     // set unused field to 0 - we might not be handling something
     // which gets turned-on by this field, like with dtb
-    b->hdr.unused = 0;
+    b->hdr.header_version = BOOT_HEADER_VERSION_ZERO;
 
     fill_id_hashes(b);
 

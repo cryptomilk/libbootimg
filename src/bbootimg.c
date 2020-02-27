@@ -295,17 +295,43 @@ static int print_info(const char *path)
 
     printf ("* kernel size       = %u bytes (%.2f MB)\n", img.hdr.kernel_size, (double)img.hdr.kernel_size/0x100000);
     printf ("  ramdisk size      = %u bytes (%.2f MB)\n", img.hdr.ramdisk_size, (double)img.hdr.ramdisk_size/0x100000);
-    if (img.hdr.second_size)
+    if (img.hdr.second_size) {
         printf ("  second stage size = %u bytes (%.2f MB)\n", img.hdr.second_size, (double)img.hdr.second_size/0x100000);
-    if (img.hdr.dt_size)
-        printf ("  device tree size  = %u bytes (%.2f MB)\n", img.hdr.dt_size, (double)img.hdr.dt_size/0x100000);
+    }
+    if (img.hdr.dt_size > BOOT_HEADER_VERSION_MAX) {
+        printf("  device tree size  = %u bytes (%.2f MB)\n",
+               img.hdr.dt_size,
+               (double)img.hdr.dt_size/0x100000);
+    }
 
     printf ("\n* load addresses:\n");
     printf ("  kernel:       0x%08x\n", img.hdr.kernel_addr);
     printf ("  ramdisk:      0x%08x\n", img.hdr.ramdisk_addr);
     if (img.hdr.second_size)
         printf ("  second stage: 0x%08x\n", img.hdr.second_addr);
-    printf ("  tags:         0x%08x\n\n", img.hdr.tags_addr);
+    printf ("  tags:         0x%08x\n", img.hdr.tags_addr);
+
+    printf ("\n* versions:\n");
+    if (img.hdr.header_version <= BOOT_HEADER_VERSION_MAX) {
+        printf ("  header:       %u\n",     img.hdr.header_version);
+    }
+    if (img.hdr.os_version > 0) {
+        uint32_t os_version = img.hdr.os_version >> 11;
+        uint32_t os_patch_level =  img.hdr.os_version & 0x7ff;;
+        uint32_t a = (os_version >> 14) & 0x7f;
+        uint32_t b = (os_version >> 7)  & 0x7f;
+        uint32_t c = os_version & 0x7f;
+
+        uint32_t y = (os_patch_level >> 4) + 2000;
+        uint32_t m = os_patch_level & 0xf;
+
+        if((a < 128) && (b < 128) && (c < 128) &&
+           (y >= 2000) && (y < 2128) && (m > 0) && (m <= 12)) {
+            printf ("  os version:   %u.%u.%u\n", a, b, c);
+            printf ("  os patch lvl: %u.%u\n", y, m);
+        }
+    }
+    printf ("\n");
 
     if (img.hdr.cmdline[0])
         printf ("* cmdline = %s\n\n", img.hdr.cmdline);

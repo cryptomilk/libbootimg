@@ -55,9 +55,12 @@
 #define BOOT_MAGIC_ELF_SIZE 3
 #define BOOT_NAME_SIZE 16
 #define BOOT_ARGS_SIZE 512
+#define BOOT_EXTRA_ARGS_SIZE 1024
 
-struct boot_img_hdr
-{
+#define BOOT_HEADER_VERSION_MAX 4
+
+#define BOOT_HEADER_VERSION_ZERO 0
+struct boot_img_hdr_v0 {
     uint8_t magic[BOOT_MAGIC_SIZE];
 
     uint32_t kernel_size;  /* size in bytes */
@@ -71,14 +74,90 @@ struct boot_img_hdr
 
     uint32_t tags_addr;    /* physical addr for kernel tags */
     uint32_t page_size;    /* flash page size we assume */
-    uint32_t dt_size;      /* device tree in bytes */
-    uint32_t unused;       /* future expansion: should be 0 */
+    union {
+        uint32_t header_version;
+        uint32_t dt_size;  /* device tree in bytes */
+    };
+    uint32_t os_version;   /* operating system version + security patch level */
 
     uint8_t name[BOOT_NAME_SIZE]; /* asciiz product name */
 
     uint8_t cmdline[BOOT_ARGS_SIZE];
 
     uint32_t id[8]; /* timestamp / checksum / sha1 / etc */
+
+    uint8_t extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
+};
+
+#define BOOT_HEADER_VERSION_ONE 1
+struct boot_img_hdr_v1 {
+    uint8_t magic[BOOT_MAGIC_SIZE];
+
+    uint32_t kernel_size;  /* size in bytes */
+    uint32_t kernel_addr;  /* physical load addr */
+
+    uint32_t ramdisk_size; /* size in bytes */
+    uint32_t ramdisk_addr; /* physical load addr */
+
+    uint32_t second_size;  /* size in bytes */
+    uint32_t second_addr;  /* physical load addr */
+
+    uint32_t tags_addr;    /* physical addr for kernel tags */
+    uint32_t page_size;    /* flash page size we assume */
+    union {
+        uint32_t header_version;
+        uint32_t dt_size;  /* device tree in bytes */
+    };
+    uint32_t os_version;   /* operating system version + security patch level */
+
+    uint8_t name[BOOT_NAME_SIZE]; /* asciiz product name */
+
+    uint8_t cmdline[BOOT_ARGS_SIZE];
+
+    uint32_t id[8]; /* timestamp / checksum / sha1 / etc */
+
+    uint8_t extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
+
+    uint32_t recovery_dtbo_size;   /* size in bytes for recovery DTBO/ACPIO image */
+    uint64_t recovery_dtbo_offset; /* offset to recovery dtbo/acpio in boot image */
+    uint32_t header_size;
+};
+
+#define BOOT_HEADER_VERSION_TWO 2
+struct boot_img_hdr_v2 {
+    uint8_t magic[BOOT_MAGIC_SIZE];
+
+    uint32_t kernel_size;  /* size in bytes */
+    uint32_t kernel_addr;  /* physical load addr */
+
+    uint32_t ramdisk_size; /* size in bytes */
+    uint32_t ramdisk_addr; /* physical load addr */
+
+    uint32_t second_size;  /* size in bytes */
+    uint32_t second_addr;  /* physical load addr */
+
+    uint32_t tags_addr;    /* physical addr for kernel tags */
+    uint32_t page_size;    /* flash page size we assume */
+    union {
+        uint32_t header_version;
+        uint32_t dt_size;  /* device tree in bytes */
+    };
+    uint32_t os_version;   /* operating system version + security patch level */
+
+    uint8_t name[BOOT_NAME_SIZE]; /* asciiz product name */
+
+    uint8_t cmdline[BOOT_ARGS_SIZE];
+
+    uint32_t id[8]; /* timestamp / checksum / sha1 / etc */
+
+    uint8_t extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
+
+    uint32_t recovery_dtbo_size;   /* size in bytes for recovery DTBO/ACPIO image */
+    uint64_t recovery_dtbo_offset; /* offset to recovery dtbo/acpio in boot image */
+    uint32_t header_size;
+
+    uint32_t dtb_size; /* size in bytes for DTB image */
+    uint64_t dtb_addr; /* physical load address for DTB image */
 };
 
 struct boot_img_hdr_elf
@@ -132,7 +211,5 @@ struct boot_img_hdr_elf
     uint32_t cmd_align;             /* cmdline alignment */
     uint8_t name[BOOT_NAME_SIZE];   /* added - asciiz product name */
 };
-
-typedef struct boot_img_hdr boot_img_hdr;
 
 #endif
