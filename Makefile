@@ -16,10 +16,10 @@ clean:
 ${program}: ${OBJ}
 	$(CC) ${OBJ} -o ${program} ${OPT}
 
-bbootimg.o: bbootimg.c
+bbootimg.o: src/bbootimg.c
 	$(CC) -c ${OPT} $<
 
-libbootimg.o: libbootimg.c
+libbootimg.o: src/libbootimg.c
 	$(CC) -c ${OPT} $<
 
 install: build
